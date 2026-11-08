@@ -18,12 +18,25 @@ def hash_password(password):
     return ph.hash(password)
 
 def init_database():
-    """Initialize database if empty"""
+    """Initialize the database with default data"""
 
-    # Initialize activities if empty
-    if activities_collection.count_documents({}) == 0:
-        for name, details in initial_activities.items():
-            activities_collection.insert_one({"_id": name, **details})
+    # Initialize activities that are missing
+    for name, details in initial_activities.items():
+        activities_collection.update_one(
+            {"_id": name},
+            {"$setOnInsert": details},
+            upsert=True
+        )
+
+    manga_maniacs = initial_activities["Manga Maniacs"]
+    activities_collection.update_one(
+        {"_id": "Manga Maniacs"},
+        {"$set": {
+            "schedule": manga_maniacs["schedule"],
+            "schedule_details": manga_maniacs["schedule_details"],
+            "max_participants": manga_maniacs["max_participants"],
+        }}
+    )
             
     # Initialize teacher accounts if empty
     if teachers_collection.count_documents({}) == 0:
@@ -120,6 +133,16 @@ initial_activities = {
         "max_participants": 10,
         "participants": ["james@mergington.edu", "benjamin@mergington.edu"]
     },
+    "Manga Maniacs": {
+        "description": "Dive into epic adventures, unforgettable heroes, and wild worlds in Japanese manga. Share your favorite stories, characters, and plot twists!",
+        "schedule": "Tuesdays, 5:00 PM",
+        "schedule_details": {
+            "days": ["Tuesday"],
+            "start_time": "17:00"
+        },
+        "max_participants": 25,
+        "participants": []
+    },
     "Debate Team": {
         "description": "Develop public speaking and argumentation skills",
         "schedule": "Fridays, 3:30 PM - 5:30 PM",
@@ -186,4 +209,3 @@ initial_teachers = [
         "role": "admin"
     }
 ]
-
